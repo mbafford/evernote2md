@@ -13,10 +13,10 @@ import (
 
 // Max path length in bytes, determined empirically.
 // P.S. Don't trust Apple documentation
-const maxNameBytes int = 704
+const maxNameBytes int = 250
 
 // Semicolon is not allowed in MacOS and spaces is just my personal preference
-var illegalChars = regexp.MustCompile(`[\s:]`)
+var illegalChars = regexp.MustCompile(`[:]`)
 
 // ChangeFileTimes matches the file times with the Evernote metadata
 //

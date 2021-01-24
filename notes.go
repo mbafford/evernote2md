@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"regexp"
 	"strings"
+	"time"
 
 	"github.com/wormi4ok/evernote2md/encoding/markdown"
 	"github.com/wormi4ok/evernote2md/file"
@@ -35,6 +37,13 @@ func newNoteFilesDir(output string, folders, timestamps bool) *noteFilesDir {
 // SaveNote along with media resources
 func (d *noteFilesDir) SaveNote(title string, md *markdown.Note) error {
 	path := d.path
+
+	m, _ := regexp.Match("^[0-9]{4}-?[0-9]{2}-?[0-9]{2}", []byte(title))
+	if !m {
+		loc, _ := time.LoadLocation("US/Eastern")
+		title = fmt.Sprintf("%s - %s", md.CTime.In(loc).Format("20060102"), title)
+	}
+
 	if d.flagFolders {
 		path = filepath.FromSlash(d.path + "/" + d.uniqueName(title))
 		title = "README.md"

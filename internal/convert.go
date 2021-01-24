@@ -47,6 +47,8 @@ func (c *Converter) Convert(note *enex.Note) (*markdown.Note, error) {
 	c.toMarkdown(note, md)
 	c.prependTags(note, md)
 	c.prependTitle(note, md)
+	c.prependTags(note, md)
+	c.prependFrontmatter(note, md)
 	c.trimSpaces(note, md)
 	c.addDates(note, md)
 
@@ -120,6 +122,33 @@ func (c *Converter) trimSpaces(_ *enex.Note, md *markdown.Note) {
 	md.Content = append(bytes.TrimRight(md.Content, "\n"), '\n')
 }
 
+func (c *Converter) prependFrontmatter(note *enex.Note, md *markdown.Note) {
+	if c.err != nil {
+		return
+	}
+
+	loc, _ := time.LoadLocation("US/Eastern")
+
+	md.CTime = convertEvernoteDate(note.Created)
+	md.MTime = convertEvernoteDate(note.Updated)
+
+	var tags []string
+	for _, t := range note.Tags {
+		t = spaces.ReplaceAllString(t, "-")
+		tags = append(tags, t)
+	}
+
+	var frontmatter []byte
+	frontmatter = append(frontmatter, []byte(fmt.Sprintf("---\n"))...)
+	frontmatter = append(frontmatter, []byte(fmt.Sprintf("title: %s\n", note.Title))...)
+	frontmatter = append(frontmatter, []byte(fmt.Sprintf("tags: %s\n", strings.Join(tags, ", ")))...)
+	frontmatter = append(frontmatter, []byte(fmt.Sprintf("created: %s\n", md.CTime.In(loc).Format(time.RFC3339)))...)
+	frontmatter = append(frontmatter, []byte(fmt.Sprintf("updated: %s\n", md.MTime.In(loc).Format(time.RFC3339)))...)
+	frontmatter = append(frontmatter, []byte(fmt.Sprintf("---\n\n"))...)
+
+	md.Content = append([]byte(frontmatter), md.Content...)
+}
+
 func (c *Converter) addDates(note *enex.Note, md *markdown.Note) {
 	if c.err != nil {
 		return
@@ -127,6 +156,11 @@ func (c *Converter) addDates(note *enex.Note, md *markdown.Note) {
 
 	md.CTime = convertEvernoteDate(note.Created)
 	md.MTime = convertEvernoteDate(note.Updated)
+
+	loc, _ := time.LoadLocation("US/Eastern")
+
+	formatted_ctime := []byte(md.CTime.In(loc).Format(time.RFC3339))
+	md.Content = append(md.Content, formatted_ctime...)
 }
 
 const evernoteDateFormat = "20060102T150405Z"
